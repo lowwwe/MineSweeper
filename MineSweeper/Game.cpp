@@ -107,19 +107,26 @@ void Game::processKeys(sf::Event t_event)
 
 void Game::processMouseDown(sf::Event t_event)
 {
-	
+
 	sf::Vector2i square;
 	if (t_event.mouseButton.x - TOP_LEFTi.x > 0.0f && t_event.mouseButton.y - TOP_LEFTi.y > 0.0f)
 	{
 		square.y = (t_event.mouseButton.x - TOP_LEFTi.x) / SPRITE_TILE_WIDTH;
 		square.x = (t_event.mouseButton.y - TOP_LEFTi.y) / SPRITE_TILE_HEIGHT;
-		if (square.x < mapHeight && square.y < mapWidth)
+		if (sf::Mouse::Button::Middle == t_event.mouseButton.button)
 		{
-			if (m_currentSquare != square)
+			highlightAdjacent(sf::Color::Blue,square);
+		}
+		else
+		{
+			if (square.x < mapHeight && square.y < mapWidth)
 			{
-				highLight(sf::Color::White, m_currentSquare);
-				highLight(sf::Color::Red, square);
-				m_currentSquare = square;
+				if (m_currentSquare != square)
+				{
+					highLight(sf::Color::White, m_currentSquare);
+					highLight(sf::Color::Red, square);
+					m_currentSquare = square;
+				}
 			}
 		}
 	}
@@ -134,6 +141,15 @@ void Game::processMouseUp(sf::Event t_event)
 		square.x = (t_event.mouseButton.y - TOP_LEFTi.y) / SPRITE_TILE_HEIGHT;
 		if ( square.x < mapHeight && square.y < mapWidth)
 		{
+			if (sf::Mouse::Button::Middle == t_event.mouseButton.button)
+			{
+				int count = countFlags(square);
+				if (count == m_playerMap[square.x][square.y])
+				{
+					clearAdjacent(square);
+				}
+				highlightAdjacentWhite(sf::Color::White, square);
+			}
 			if (sf::Mouse::Button::Left == t_event.mouseButton.button)
 			{
 				if (m_currentSquare == square)
@@ -145,6 +161,10 @@ void Game::processMouseUp(sf::Event t_event)
 					{
 						clearSpace(square);
 					}
+					if (m_map[square.x][square.y] == 9)
+					{
+						clearMap(square);
+					}
 				}
 				else
 				{
@@ -155,8 +175,32 @@ void Game::processMouseUp(sf::Event t_event)
 			{
 				if (m_currentSquare == square)
 				{
-					highLight(sf::Color::White, m_currentSquare);
-					showQuestion(m_currentSquare);
+					if (11 == m_playerMap[square.x][square.y])
+					{
+						highLight(sf::Color::White, m_currentSquare);
+						showQuestion(m_currentSquare, BLANK);
+						m_playerMap[square.x][square.y] = -1;
+					}
+					else
+					{
+						if (10 == m_playerMap[square.x][square.y])
+						{
+							highLight(sf::Color::White, m_currentSquare);
+							showQuestion(m_currentSquare, QUESTION);
+							m_playerMap[square.x][square.y] = 11;
+						}
+						else
+						{
+							if (-1 == m_playerMap[square.x][square.y])
+							{
+								highLight(sf::Color::White, m_currentSquare);
+								showQuestion(m_currentSquare, FLAG);
+								m_playerMap[square.x][square.y] = 10;
+							}
+						}
+					}
+					
+					
 				}
 				else
 				{
@@ -195,11 +239,11 @@ void Game::showTile(sf::Vector2i t_square)
 
 }
 
-void Game::showQuestion(sf::Vector2i t_square)
+void Game::showQuestion(sf::Vector2i t_square, sf::Vector2f t_style)
 {
 	int index = (t_square.y + t_square.x * mapWidth) * 6;
 	sf::Vector2f topLeft;
-	topLeft = sf::Vector2f{ 96.0f,64.0f };
+	topLeft = t_style;
 	
 	m_tilesArray[index++].texCoords = topLeft; // a
 	m_tilesArray[index++].texCoords = topLeft + sf::Vector2f{ TEXTURE_TILE_WIDTH,0.0f }; //b
@@ -446,6 +490,116 @@ void Game::clearSpace(sf::Vector2i t_square)
 
 }
 
+void Game::clearMap(sf::Vector2i t_square)
+{
+	int index = 0;
+	sf::Vector2f topLeft;
+	for (int i = 0; i < mapHeight; i++)
+	{
+		for (int j = 0; j < mapWidth; j++)
+		{
+			topLeft.x = (m_map[i][j] % 4) * TEXTURE_TILE_WIDTH;
+			topLeft.y = (m_map[i][j] / 4) * TEXTURE_TILE_HEIGHT;
+			if (m_map[i][j] == 9)
+			{
+				topLeft = { 64.0f,96.0f };
+			}
+			index = (j * 6) + (i * mapWidth * 6);
+			m_tilesArray[index++].texCoords = topLeft; // a
+			m_tilesArray[index++].texCoords = topLeft + sf::Vector2f{ TEXTURE_TILE_WIDTH,0.0f }; //b
+			m_tilesArray[index++].texCoords = topLeft + sf::Vector2f{ 0.0f, TEXTURE_TILE_HEIGHT }; //d;
+			m_tilesArray[index++].texCoords = topLeft + sf::Vector2f{ TEXTURE_TILE_WIDTH,0.0f }; //b;
+			m_tilesArray[index++].texCoords = topLeft + sf::Vector2f{ TEXTURE_TILE_HEIGHT, TEXTURE_TILE_WIDTH }; //c;;
+			m_tilesArray[index++].texCoords = topLeft + sf::Vector2f{ 0.0f, TEXTURE_TILE_HEIGHT }; //d;;
+		}
+	}
+	topLeft = { 64.0f,64.0f };
+
+	index = (t_square.y * 6) + (t_square.x * mapWidth * 6);
+	m_tilesArray[index++].texCoords = topLeft; // a
+	m_tilesArray[index++].texCoords = topLeft + sf::Vector2f{ TEXTURE_TILE_WIDTH,0.0f }; //b
+	m_tilesArray[index++].texCoords = topLeft + sf::Vector2f{ 0.0f, TEXTURE_TILE_HEIGHT }; //d;
+	m_tilesArray[index++].texCoords = topLeft + sf::Vector2f{ TEXTURE_TILE_WIDTH,0.0f }; //b;
+	m_tilesArray[index++].texCoords = topLeft + sf::Vector2f{ TEXTURE_TILE_HEIGHT, TEXTURE_TILE_WIDTH }; //c;;
+	m_tilesArray[index++].texCoords = topLeft + sf::Vector2f{ 0.0f, TEXTURE_TILE_HEIGHT }; //d
+
+}
+
+int Game::countFlags(sf::Vector2i t_square)
+{
+	int count=0;
+	for (int i = -1; i < 2; i++)
+	{
+		for (int j = -1; j < 2; j++)
+		{
+			if (10 == m_playerMap[t_square.x + i][t_square.y + j])
+			{
+				count++;
+			}
+		}
+	}
+	std::cout << count << " flags" << std::endl;
+	return count;
+}
+
+void Game::clearAdjacent(sf::Vector2i t_square)
+{
+	
+		clearTileAuto(t_square + sf::Vector2i{ -1, -1 });
+		clearTileAuto(t_square + sf::Vector2i{ -1, 0 });
+		clearTileAuto(t_square + sf::Vector2i{ -1, +1 });
+		clearTileAuto(t_square + sf::Vector2i{ 0, -1 });
+		clearTileAuto(t_square + sf::Vector2i{ 0, +1 });
+		clearTileAuto(t_square + sf::Vector2i{ 1, -1 });
+		clearTileAuto(t_square + sf::Vector2i{ 1, 0 });
+		clearTileAuto(t_square + sf::Vector2i{ 1, +1 });
+	
+
+}
+
+void Game::highlightAdjacentWhite(sf::Color t_colur, sf::Vector2i t_square)
+{
+	highLightWhite(t_colur, t_square + sf::Vector2i{ -1, -1 });
+	highLightWhite(t_colur, t_square + sf::Vector2i{ -1, 0 });
+	highLightWhite(t_colur, t_square + sf::Vector2i{ -1, +1 });
+	highLightWhite(t_colur, t_square + sf::Vector2i{ 0, -1 });
+	highLightWhite(t_colur, t_square + sf::Vector2i{ 0, +1 });
+	highLightWhite(t_colur, t_square + sf::Vector2i{ 1, -1 });
+	highLightWhite(t_colur, t_square + sf::Vector2i{ 1, 0 });
+	highLightWhite(t_colur, t_square + sf::Vector2i{ 1, +1 });
+}
+
+void Game::highlightAdjacent(sf::Color t_colur, sf::Vector2i t_square)
+{
+	highLightBlank(t_colur, t_square + sf::Vector2i{ -1, -1 });
+	highLightBlank(t_colur, t_square + sf::Vector2i{ -1, 0 });
+	highLightBlank(t_colur, t_square + sf::Vector2i{ -1, +1 });
+	highLightBlank(t_colur, t_square + sf::Vector2i{ 0, -1 });
+	highLightBlank(t_colur, t_square + sf::Vector2i{ 0, +1 });
+	highLightBlank(t_colur, t_square + sf::Vector2i{ 1, -1 });
+	highLightBlank(t_colur, t_square + sf::Vector2i{ 1, 0 });
+	highLightBlank(t_colur, t_square + sf::Vector2i{ 1, +1 });
+}
+
+void Game::highLightBlank(sf::Color t_colour, sf::Vector2i t_square)
+{
+	if (t_square.x > -1 && t_square.x < mapHeight &&
+		t_square.y > -1 && t_square.y < mapWidth &&
+		-1 == m_playerMap[t_square.x][t_square.y] )
+	{
+		highLight(t_colour, t_square);
+	}
+}
+
+void Game::highLightWhite(sf::Color t_colour, sf::Vector2i t_square)
+{
+	if (t_square.x > -1 && t_square.x < mapHeight &&
+		t_square.y > -1 && t_square.y < mapWidth)
+	{
+		highLight(t_colour, t_square);
+	}
+}
+
 void Game::clearTile(sf::Vector2i t_square)
 {
 	m_playerMap[t_square.x][t_square.y] = m_map[t_square.x][t_square.y];
@@ -453,5 +607,21 @@ void Game::clearTile(sf::Vector2i t_square)
 	if (m_playerMap[t_square.x][t_square.y] == 0)
 	{
 		clearSpace(sf::Vector2i{ t_square.x , t_square.y });
+	}
+}
+
+void Game::clearTileAuto(sf::Vector2i t_square)
+{
+	if (t_square.x > -1 && t_square.x < mapHeight &&
+		t_square.y > -1 && t_square.y < mapWidth &&
+		10 != m_playerMap[t_square.x][t_square.y] )
+	{
+		m_playerMap[t_square.x][t_square.y] = m_map[t_square.x][t_square.y];
+		showTile(t_square);
+		if (m_playerMap[t_square.x][t_square.y] == 0)
+		{
+			clearSpace(sf::Vector2i{ t_square.x , t_square.y });
+		}
+
 	}
 }
