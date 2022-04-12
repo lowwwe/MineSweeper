@@ -24,6 +24,7 @@ Game::Game() :
 	setupSprite(); // load texture
 	resetMap(mapWidth, mapHeight, 10);
 	resetArray(mapWidth, mapHeight);
+	calculateMap(mapWidth, mapHeight);
 }
 
 /// <summary>
@@ -71,13 +72,22 @@ void Game::processEvents()
 	sf::Event newEvent;
 	while (m_window.pollEvent(newEvent))
 	{
-		if ( sf::Event::Closed == newEvent.type) // window message
+		switch (newEvent.type)
 		{
+		case sf::Event::Closed:
 			m_exitGame = true;
-		}
-		if (sf::Event::KeyPressed == newEvent.type) //user pressed a key
-		{
+			break;
+		case sf::Event::KeyPressed:
 			processKeys(newEvent);
+			break;
+		case sf::Event::MouseButtonPressed:
+			processMouseDown(newEvent);
+			break;
+		case sf::Event::MouseButtonReleased:
+			processMouseUp(newEvent);
+			break;
+		default:
+			break;
 		}
 	}
 }
@@ -93,6 +103,59 @@ void Game::processKeys(sf::Event t_event)
 	{
 		m_exitGame = true;
 	}
+}
+
+void Game::processMouseDown(sf::Event t_event)
+{
+	sf::Vector2i square;
+	square.y = (t_event.mouseButton.x - TOP_LEFTi.x) / SPRITE_TILE_WIDTH;
+	square.x = (t_event.mouseButton.y - TOP_LEFTi.y) / SPRITE_TILE_HEIGHT;
+	if (m_currentSquare != square)
+	{
+		highLight(sf::Color::White, m_currentSquare);
+		highLight(sf::Color::Red, square);
+		m_currentSquare = square;
+	}
+}
+
+void Game::processMouseUp(sf::Event t_event)
+{
+	sf::Vector2i square;
+	square.y = (t_event.mouseButton.x - TOP_LEFTi.x) / SPRITE_TILE_WIDTH;
+	square.x = (t_event.mouseButton.y - TOP_LEFTi.y) / SPRITE_TILE_HEIGHT;
+	if (m_currentSquare == square)
+	{
+		highLight(sf::Color::White, m_currentSquare);
+		showTile(m_currentSquare);
+	}
+}
+
+void Game::highLight(sf::Color t_colour, sf::Vector2i t_square)
+{
+	int index = (t_square.y  + t_square.x * mapWidth) * 6;
+	for (int i = index; i < index + 6; i++)
+	{
+		m_tilesArray[i].color = t_colour;
+	}
+}
+
+void Game::showTile(sf::Vector2i t_square)
+{
+	int index = (t_square.y + t_square.x * mapWidth) * 6;
+	sf::Vector2f topLeft;
+	topLeft.x = (m_map[t_square.x][t_square.y] % 4) * TEXTURE_TILE_WIDTH;
+	topLeft.y = (m_map[t_square.x][t_square.y] / 4) * TEXTURE_TILE_HEIGHT;
+	if (m_map[t_square.x][t_square.y] == 9)
+	{
+		topLeft = sf::Vector2f{ 64.0f,64.0f };
+	}
+	m_tilesArray[index++].texCoords = topLeft; // a
+	m_tilesArray[index++].texCoords = topLeft + sf::Vector2f{0.0f, TEXTURE_TILE_WIDTH }; //b
+	m_tilesArray[index++].texCoords = topLeft + sf::Vector2f{ TEXTURE_TILE_HEIGHT,0.0f }; //d;
+	m_tilesArray[index++].texCoords = topLeft + sf::Vector2f{ 0.0f, TEXTURE_TILE_WIDTH }; //b;
+	m_tilesArray[index++].texCoords = topLeft + sf::Vector2f{ TEXTURE_TILE_HEIGHT, TEXTURE_TILE_WIDTH }; //c;;
+	m_tilesArray[index++].texCoords = topLeft + sf::Vector2f{ TEXTURE_TILE_HEIGHT, 0.0f}; //d;;
+
 }
 
 /// <summary>
@@ -226,4 +289,56 @@ void Game::resetArray(int t_width, int t_height)
 		}
 	}
 
+}
+
+void Game::calculateMap(int t_width, int t_height)
+{
+	int x=0;
+	for (int i = 0; i < t_height; i++)
+	{
+		for (int j = 0; j < t_width; j++)
+		{
+			if (m_map[i][j] == 9)
+			{
+				if (j == 3) 
+					x = 9;
+				// top row
+				x++;
+				if (i > 0 && j > 0 && m_map[i - 1][j-1] != 9)
+				{
+					m_map[i - 1][j-1]++; //a
+				}
+				if (j > 0 && m_map[i][j - 1] != 9)
+				{
+					m_map[i][j - 1]++; //b
+				}
+				if (i > 0 && j > 0 && m_map[i- 1][j -  1] != 9)
+				{
+					m_map[i + 1][j - 1]++; //c
+				}
+				// middle row
+				if (i > 0 && m_map[i - 1][j] != 9)
+				{
+					m_map[i - 1][j]++; //d
+				}
+				if ( i < t_width - 1 && m_map[i+1][j] != 9)
+				{
+					m_map[i + 1][j]++; //f
+				}
+				// bottom row
+				if (i > 0 && j < t_width - 1  && m_map[i - 1][j + 1] != 9)
+				{
+					m_map[i - 1][j + 1]++; //g
+				}
+				if (j < t_width - 1 && m_map[i][j + 1] != 9)
+				{
+					m_map[i][j + 1]++; //h
+				}
+				if (i < t_height -1 && j < t_width - 1 && m_map[i + 1][j + 1] != 9)
+				{
+					m_map[i + 1][j + 1]++; //i
+				}
+			}
+		}
+	}
 }

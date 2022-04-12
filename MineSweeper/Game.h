@@ -17,6 +17,7 @@
 const int MAX_MAP_WIDTH = 20;
 const int MAX_MAP_HEIGHT = 10;
 const sf::Vector2f TOP_LEFT = { 100.0f, 100.0f };
+const sf::Vector2i TOP_LEFTi = static_cast<sf::Vector2i>( TOP_LEFT);
 
 const float SPRITE_TILE_WIDTH = 50.0f;
 const float SPRITE_TILE_HEIGHT = 50.0f;
@@ -39,6 +40,11 @@ private:
 
 	void processEvents();
 	void processKeys(sf::Event t_event);
+	void processMouseDown(sf::Event t_event);
+	void processMouseUp(sf::Event t_event);
+	void highLight(sf::Color t_colour, sf::Vector2i t_square);
+	void showTile(sf::Vector2i t_square);
+
 	void update(sf::Time t_deltaTime);
 	void render();
 	
@@ -46,6 +52,7 @@ private:
 	void setupSprite();
 	void resetMap(int t_width, int t_height, int t_bombsCount);
 	void resetArray(int t_width, int t_height);
+	void calculateMap(int t_width, int t_height);
 
 	sf::RenderWindow m_window; // main SFML window
 	sf::Font m_ArialBlackfont; // font used by message
@@ -58,6 +65,7 @@ private:
 	int mapWidth = 15;
 	int mapHeight = 8;
 	int m_map[MAX_MAP_HEIGHT][MAX_MAP_WIDTH];
+	sf::Vector2i m_currentSquare;
 };
 
 #endif // !GAME_HPP
