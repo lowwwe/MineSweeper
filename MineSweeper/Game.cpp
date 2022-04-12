@@ -107,26 +107,63 @@ void Game::processKeys(sf::Event t_event)
 
 void Game::processMouseDown(sf::Event t_event)
 {
+	
 	sf::Vector2i square;
-	square.y = (t_event.mouseButton.x - TOP_LEFTi.x) / SPRITE_TILE_WIDTH;
-	square.x = (t_event.mouseButton.y - TOP_LEFTi.y) / SPRITE_TILE_HEIGHT;
-	if (m_currentSquare != square)
+	if (t_event.mouseButton.x - TOP_LEFTi.x > 0.0f && t_event.mouseButton.y - TOP_LEFTi.y > 0.0f)
 	{
-		highLight(sf::Color::White, m_currentSquare);
-		highLight(sf::Color::Red, square);
-		m_currentSquare = square;
+		square.y = (t_event.mouseButton.x - TOP_LEFTi.x) / SPRITE_TILE_WIDTH;
+		square.x = (t_event.mouseButton.y - TOP_LEFTi.y) / SPRITE_TILE_HEIGHT;
+		if (square.x < mapHeight && square.y < mapWidth)
+		{
+			if (m_currentSquare != square)
+			{
+				highLight(sf::Color::White, m_currentSquare);
+				highLight(sf::Color::Red, square);
+				m_currentSquare = square;
+			}
+		}
 	}
 }
 
 void Game::processMouseUp(sf::Event t_event)
 {
 	sf::Vector2i square;
-	square.y = (t_event.mouseButton.x - TOP_LEFTi.x) / SPRITE_TILE_WIDTH;
-	square.x = (t_event.mouseButton.y - TOP_LEFTi.y) / SPRITE_TILE_HEIGHT;
-	if (m_currentSquare == square)
+	if (t_event.mouseButton.x - TOP_LEFTi.x > 0.0f && t_event.mouseButton.y - TOP_LEFTi.y > 0.0f)
 	{
-		highLight(sf::Color::White, m_currentSquare);
-		showTile(m_currentSquare);
+		square.y = (t_event.mouseButton.x - TOP_LEFTi.x) / SPRITE_TILE_WIDTH;
+		square.x = (t_event.mouseButton.y - TOP_LEFTi.y) / SPRITE_TILE_HEIGHT;
+		if ( square.x < mapHeight && square.y < mapWidth)
+		{
+			if (sf::Mouse::Button::Left == t_event.mouseButton.button)
+			{
+				if (m_currentSquare == square)
+				{
+					highLight(sf::Color::White, m_currentSquare);
+					m_playerMap[square.x][square.y] = m_map[square.x][square.y];
+					showTile(m_currentSquare);
+					if (m_map[square.x][square.y] == 0)
+					{
+						clearSpace(square);
+					}
+				}
+				else
+				{
+					highLight(sf::Color::White, m_currentSquare);
+				}
+			}
+			if (sf::Mouse::Button::Right == t_event.mouseButton.button)
+			{
+				if (m_currentSquare == square)
+				{
+					highLight(sf::Color::White, m_currentSquare);
+					showQuestion(m_currentSquare);
+				}
+				else
+				{
+					highLight(sf::Color::White, m_currentSquare);
+				}
+			}
+		}
 	}
 }
 
@@ -145,18 +182,34 @@ void Game::showTile(sf::Vector2i t_square)
 	sf::Vector2f topLeft;
 	topLeft.x = (m_map[t_square.x][t_square.y] % 4) * TEXTURE_TILE_WIDTH;
 	topLeft.y = (m_map[t_square.x][t_square.y] / 4) * TEXTURE_TILE_HEIGHT;
-	if (m_map[t_square.x][t_square.y] == 9)
+	/*if (m_map[t_square.x][t_square.y] == 9)
 	{
 		topLeft = sf::Vector2f{ 64.0f,64.0f };
-	}
+	}*/
 	m_tilesArray[index++].texCoords = topLeft; // a
-	m_tilesArray[index++].texCoords = topLeft + sf::Vector2f{0.0f, TEXTURE_TILE_WIDTH }; //b
-	m_tilesArray[index++].texCoords = topLeft + sf::Vector2f{ TEXTURE_TILE_HEIGHT,0.0f }; //d;
-	m_tilesArray[index++].texCoords = topLeft + sf::Vector2f{ 0.0f, TEXTURE_TILE_WIDTH }; //b;
+	m_tilesArray[index++].texCoords = topLeft + sf::Vector2f{TEXTURE_TILE_WIDTH,0.0f }; //b
+	m_tilesArray[index++].texCoords = topLeft + sf::Vector2f{ 0.0f, TEXTURE_TILE_HEIGHT }; //d;
+	m_tilesArray[index++].texCoords = topLeft + sf::Vector2f{ TEXTURE_TILE_WIDTH,0.0f }; //b;
 	m_tilesArray[index++].texCoords = topLeft + sf::Vector2f{ TEXTURE_TILE_HEIGHT, TEXTURE_TILE_WIDTH }; //c;;
-	m_tilesArray[index++].texCoords = topLeft + sf::Vector2f{ TEXTURE_TILE_HEIGHT, 0.0f}; //d;;
+	m_tilesArray[index++].texCoords = topLeft + sf::Vector2f{ 0.0f, TEXTURE_TILE_HEIGHT }; //d;;
 
 }
+
+void Game::showQuestion(sf::Vector2i t_square)
+{
+	int index = (t_square.y + t_square.x * mapWidth) * 6;
+	sf::Vector2f topLeft;
+	topLeft = sf::Vector2f{ 96.0f,64.0f };
+	
+	m_tilesArray[index++].texCoords = topLeft; // a
+	m_tilesArray[index++].texCoords = topLeft + sf::Vector2f{ TEXTURE_TILE_WIDTH,0.0f }; //b
+	m_tilesArray[index++].texCoords = topLeft + sf::Vector2f{ 0.0f, TEXTURE_TILE_HEIGHT }; //d;
+	m_tilesArray[index++].texCoords = topLeft + sf::Vector2f{ TEXTURE_TILE_WIDTH,0.0f }; //b;
+	m_tilesArray[index++].texCoords = topLeft + sf::Vector2f{ TEXTURE_TILE_HEIGHT, TEXTURE_TILE_WIDTH }; //c;;
+	m_tilesArray[index++].texCoords = topLeft + sf::Vector2f{ 0.0f, TEXTURE_TILE_HEIGHT }; //d;;
+}
+
+
 
 /// <summary>
 /// Update the game world
@@ -257,6 +310,8 @@ void Game::resetMap(int t_width, int t_height, int t_bombsCount)
 void Game::resetArray(int t_width, int t_height)
 {
 	sf::Vertex vertex;
+	float left = 0.0f;
+	float top = 96.0f;
 	m_tilesArray.clear();
 	vertex.color = sf::Color::White;
 	for (int i = 0; i < t_height; i++)
@@ -264,27 +319,27 @@ void Game::resetArray(int t_width, int t_height)
 		for (int j = 0; j < t_width; j++)
 		{
 			vertex.position = TOP_LEFT + sf::Vector2f{ j * SPRITE_TILE_WIDTH, i * SPRITE_TILE_HEIGHT };
-			vertex.texCoords = sf::Vector2f{ 32.0f,64.0f };
+			vertex.texCoords = sf::Vector2f{ left , top };
 			m_tilesArray.append(vertex); //a
 
 			vertex.position = TOP_LEFT + sf::Vector2f{ (j +1) * SPRITE_TILE_WIDTH, i * SPRITE_TILE_HEIGHT };
-			vertex.texCoords = sf::Vector2f{ 64.0f,64.0f };
+			vertex.texCoords = sf::Vector2f{ left +32.0f , top  };
 			m_tilesArray.append(vertex); //b
 
 			vertex.position = TOP_LEFT + sf::Vector2f{ j * SPRITE_TILE_WIDTH, (i +1) * SPRITE_TILE_HEIGHT };
-			vertex.texCoords = sf::Vector2f{ 32.0f,96.0f };
+			vertex.texCoords = sf::Vector2f{ left  , top + 32.0f };
 			m_tilesArray.append(vertex);//d
 
 			vertex.position = TOP_LEFT + sf::Vector2f{ (j + 1) * SPRITE_TILE_WIDTH, i * SPRITE_TILE_HEIGHT };
-			vertex.texCoords = sf::Vector2f{ 64.0f,64.0f };
+			vertex.texCoords = sf::Vector2f{ left + 32.0f , top  };
 			m_tilesArray.append(vertex); //b
 
 			vertex.position = TOP_LEFT + sf::Vector2f{ (j + 1) * SPRITE_TILE_WIDTH, (i+1) * SPRITE_TILE_HEIGHT };
-			vertex.texCoords = sf::Vector2f{ 64.0f,96.0f };
+			vertex.texCoords = sf::Vector2f{ left + 32.0f , top + 32.0f };
 			m_tilesArray.append(vertex);//c
 
 			vertex.position = TOP_LEFT + sf::Vector2f{ j * SPRITE_TILE_WIDTH, (i + 1) * SPRITE_TILE_HEIGHT };
-			vertex.texCoords = sf::Vector2f{ 32.0f,96.0f };
+			vertex.texCoords = sf::Vector2f{ left  , top + 32.0f };
 			m_tilesArray.append(vertex);//d
 		}
 	}
@@ -298,6 +353,7 @@ void Game::calculateMap(int t_width, int t_height)
 	{
 		for (int j = 0; j < t_width; j++)
 		{
+			m_playerMap[i][j] = -1;
 			if (m_map[i][j] == 9)
 			{
 				if (j == 3) 
@@ -308,37 +364,94 @@ void Game::calculateMap(int t_width, int t_height)
 				{
 					m_map[i - 1][j-1]++; //a
 				}
-				if (j > 0 && m_map[i][j - 1] != 9)
-				{
-					m_map[i][j - 1]++; //b
-				}
-				if (i > 0 && j > 0 && m_map[i- 1][j -  1] != 9)
-				{
-					m_map[i + 1][j - 1]++; //c
-				}
-				// middle row
 				if (i > 0 && m_map[i - 1][j] != 9)
 				{
-					m_map[i - 1][j]++; //d
+					m_map[i - 1][j]++; //b
 				}
-				if ( i < t_width - 1 && m_map[i+1][j] != 9)
+				if (i > 0 && j < t_width - 1 && m_map[i - 1][j + 1] != 9)
 				{
-					m_map[i + 1][j]++; //f
+					m_map[i - 1][j + 1]++; //c
 				}
-				// bottom row
-				if (i > 0 && j < t_width - 1  && m_map[i - 1][j + 1] != 9)
+				// middle row
+				if (j > 0 && m_map[i][j - 1] != 9)
 				{
-					m_map[i - 1][j + 1]++; //g
+					m_map[i][j - 1]++; //d
 				}
 				if (j < t_width - 1 && m_map[i][j + 1] != 9)
 				{
 					m_map[i][j + 1]++; //h
 				}
+				// bottom row
+
+				if (i < t_height - 1 && j > 0 && m_map[i+ 1][j -  1] != 9)
+				{
+					m_map[i + 1][j - 1]++; //g
+				}				
+				if ( i < t_height - 1 && m_map[i+1][j] != 9)
+				{
+					m_map[i + 1][j]++; //f
+				}				
 				if (i < t_height -1 && j < t_width - 1 && m_map[i + 1][j + 1] != 9)
 				{
 					m_map[i + 1][j + 1]++; //i
 				}
 			}
 		}
+	}
+}
+
+void Game::clearSpace(sf::Vector2i t_square)
+{
+	int x;
+	if (t_square.x == 2 && t_square.y == 2)
+	{
+		x = 9;
+	}
+	m_playerMap[t_square.x][t_square.y] = 0;
+	if (t_square.x > 0 && m_playerMap[t_square.x - 1][t_square.y] == -1)
+	{
+		clearTile(sf::Vector2i{ t_square.x - 1, t_square.y });
+	}
+	if (t_square.y > 0 && m_playerMap[t_square.x][t_square.y-1] == -1)
+	{
+		clearTile(sf::Vector2i{ t_square.x, t_square.y-1 });
+	}
+	if (t_square.x > 0 && t_square.y > 0 && m_playerMap[t_square.x-1][t_square.y - 1] == -1)
+	{
+		clearTile(sf::Vector2i{ t_square.x -1, t_square.y - 1 });
+	}
+
+	if (t_square.x < mapHeight -1 && m_playerMap[t_square.x + 1][t_square.y] == -1)
+	{
+		clearTile(sf::Vector2i{ t_square.x + 1, t_square.y });
+	}
+	if (t_square.y < mapWidth -1 && m_playerMap[t_square.x][t_square.y + 1] == -1)
+	{
+		clearTile(sf::Vector2i{ t_square.x, t_square.y + 1 });
+	}
+	if (t_square.x < mapHeight - 1 && t_square.y < mapWidth-1 && m_playerMap[t_square.x+1][t_square.y + 1] == -1)
+	{
+		clearTile(sf::Vector2i{ t_square.x + 1, t_square.y + 1 });
+	}
+
+	if (t_square.x > 0 && t_square.y < mapWidth-1 && m_playerMap[t_square.x-1][t_square.y + 1] == -1)
+	{
+		clearTile(sf::Vector2i{ t_square.x - 1, t_square.y + 1 });
+	}
+	
+	if (t_square.x < mapHeight - 1 && t_square.y >0 && m_playerMap[t_square.x+1][t_square.y - 1] == -1)
+	{
+		clearTile(sf::Vector2i{ t_square.x + 1, t_square.y - 1 });
+	}
+
+}
+
+void Game::clearTile(sf::Vector2i t_square)
+{
+	m_playerMap[t_square.x][t_square.y] = m_map[t_square.x][t_square.y];
+	showTile(t_square);
+	if (m_playerMap[t_square.x][t_square.y] == 0)
+	{
+		clearSpace(sf::Vector2i{ t_square.x , t_square.y });
 	}
 }
