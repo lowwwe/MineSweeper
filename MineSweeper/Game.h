@@ -16,18 +16,29 @@
 
 const int MAX_MAP_WIDTH = 35;
 const int MAX_MAP_HEIGHT = 25;
-const sf::Vector2f TOP_LEFT = { 100.0f, 50.0f };
-const sf::Vector2i TOP_LEFTi = static_cast<sf::Vector2i>( TOP_LEFT);
+const sf::Vector2f BOARD_TOP_LEFT = { 100.0f, 50.0f };
+const sf::Vector2i TOP_LEFTi = static_cast<sf::Vector2i>( BOARD_TOP_LEFT);
 
 const float SPRITE_TILE_WIDTH = 35.0f;
 const float SPRITE_TILE_HEIGHT = 35.0f;
 
-const float TEXTURE_TILE_WIDTH = 32.0f;
-const float TEXTURE_TILE_HEIGHT = 32.0f;
+const float TEXTURE_TILE_WIDTH = 64.0f;
+const float TEXTURE_TILE_HEIGHT = 64.0f;
 
-const sf::Vector2f BLANK = { 0.0f, 96.0f };
-const sf::Vector2f FLAG = { 96.0f, 64.0f };
-const sf::Vector2f QUESTION = { 32.0f, 96.0f };
+const int TILES_PER_ROW = 10;
+const sf::Vector2f BLANK_TILE_TOPLEFT = {128.0f, 64.0f};
+const sf::Vector2f MINE_TILE_TOPLEFT = { 256.0f, 64.0f };
+const sf::Vector2f EXPLODED_MINE_TILE_TOPLEFT = { 0.0f, 64.0f };
+const sf::Vector2f QUESTION_TILE_TOPLEFT = { 192.0f, 64.0f };
+
+const int QUESTION = 11;
+const int FLAG = 10;
+const int BLANK = -1;
+const int MINE = 9;
+const int EMPTY = 0;
+
+const sf::Vector2f FLAG_TILE_TOPLEFT = {64.0f, 64.0f };
+
 
 
 class Game
@@ -48,7 +59,7 @@ private:
 	void processMouseUp(sf::Event t_event);
 	void highLight(sf::Color t_colour, sf::Vector2i t_square);
 	void showTile(sf::Vector2i t_square);
-	void showQuestion(sf::Vector2i t_square, sf::Vector2f t_style);
+	void showSpecialTile(sf::Vector2i t_square, sf::Vector2f t_style);
 	void clearTile(sf::Vector2i t_square);
 	void clearTileAuto(sf::Vector2i t_square);
 
@@ -56,7 +67,7 @@ private:
 	void render();
 	
 	void setupFontAndText();
-	void setupSprite();
+	void loadTexture();
 	void resetMap(int t_width, int t_height, int t_bombsCount);
 	void resetArray(int t_width, int t_height);
 	void calculateMap(int t_width, int t_height);

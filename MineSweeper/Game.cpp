@@ -21,7 +21,7 @@ Game::Game() :
 	m_exitGame{false} //when true game will exit
 {
 	setupFontAndText(); // load font 
-	setupSprite(); // load texture
+	loadTexture(); // load texture
 	resetMap(mapWidth, mapHeight, 10);
 	resetArray(mapWidth, mapHeight);
 	calculateMap(mapWidth, mapHeight);
@@ -157,11 +157,11 @@ void Game::processMouseUp(sf::Event t_event)
 					highLight(sf::Color::White, m_currentSquare);
 					m_playerMap[square.x][square.y] = m_map[square.x][square.y];
 					showTile(m_currentSquare);
-					if (m_map[square.x][square.y] == 0)
+					if (m_map[square.x][square.y] == EMPTY)
 					{
 						clearSpace(square);
 					}
-					if (m_map[square.x][square.y] == 9)
+					if (m_map[square.x][square.y] == MINE)
 					{
 						clearMap(square);
 					}
@@ -175,27 +175,27 @@ void Game::processMouseUp(sf::Event t_event)
 			{
 				if (m_currentSquare == square)
 				{
-					if (11 == m_playerMap[square.x][square.y])
+					if (QUESTION == m_playerMap[square.x][square.y])
 					{
 						highLight(sf::Color::White, m_currentSquare);
-						showQuestion(m_currentSquare, BLANK);
-						m_playerMap[square.x][square.y] = -1;
+						showSpecialTile(m_currentSquare, BLANK_TILE_TOPLEFT);
+						m_playerMap[square.x][square.y] = BLANK;
 					}
 					else
 					{
-						if (10 == m_playerMap[square.x][square.y])
+						if (FLAG == m_playerMap[square.x][square.y])
 						{
 							highLight(sf::Color::White, m_currentSquare);
-							showQuestion(m_currentSquare, QUESTION);
-							m_playerMap[square.x][square.y] = 11;
+							showSpecialTile(m_currentSquare, QUESTION_TILE_TOPLEFT);
+							m_playerMap[square.x][square.y] = QUESTION;
 						}
 						else
 						{
-							if (-1 == m_playerMap[square.x][square.y])
+							if (BLANK == m_playerMap[square.x][square.y])
 							{
 								highLight(sf::Color::White, m_currentSquare);
-								showQuestion(m_currentSquare, FLAG);
-								m_playerMap[square.x][square.y] = 10;
+								showSpecialTile(m_currentSquare, FLAG_TILE_TOPLEFT);
+								m_playerMap[square.x][square.y] = FLAG;
 							}
 						}
 					}
@@ -224,12 +224,9 @@ void Game::showTile(sf::Vector2i t_square)
 {
 	int index = (t_square.y + t_square.x * mapWidth) * 6;
 	sf::Vector2f topLeft;
-	topLeft.x = (m_map[t_square.x][t_square.y] % 4) * TEXTURE_TILE_WIDTH;
-	topLeft.y = (m_map[t_square.x][t_square.y] / 4) * TEXTURE_TILE_HEIGHT;
-	/*if (m_map[t_square.x][t_square.y] == 9)
-	{
-		topLeft = sf::Vector2f{ 64.0f,64.0f };
-	}*/
+	topLeft.x = (m_map[t_square.x][t_square.y] % TILES_PER_ROW) * TEXTURE_TILE_WIDTH;
+	topLeft.y = (m_map[t_square.x][t_square.y] / TILES_PER_ROW) * TEXTURE_TILE_HEIGHT;
+
 	m_tilesArray[index++].texCoords = topLeft; // a
 	m_tilesArray[index++].texCoords = topLeft + sf::Vector2f{TEXTURE_TILE_WIDTH,0.0f }; //b
 	m_tilesArray[index++].texCoords = topLeft + sf::Vector2f{ 0.0f, TEXTURE_TILE_HEIGHT }; //d;
@@ -239,7 +236,7 @@ void Game::showTile(sf::Vector2i t_square)
 
 }
 
-void Game::showQuestion(sf::Vector2i t_square, sf::Vector2f t_style)
+void Game::showSpecialTile(sf::Vector2i t_square, sf::Vector2f t_style)
 {
 	int index = (t_square.y + t_square.x * mapWidth) * 6;
 	sf::Vector2f topLeft;
@@ -301,9 +298,9 @@ void Game::setupFontAndText()
 /// <summary>
 /// load the texture and setup the sprite for the logo
 /// </summary>
-void Game::setupSprite()
+void Game::loadTexture()
 {
-	if (!m_tilesTexture.loadFromFile("ASSETS\\IMAGES\\SpriteSheet.png"))
+	if (!m_tilesTexture.loadFromFile("ASSETS\\IMAGES\\newspritesheet.png"))
 	{
 		// simple error message if previous call fails
 		std::cout << "problem loading logo" << std::endl;
@@ -326,11 +323,11 @@ void Game::resetMap(int t_width, int t_height, int t_bombsCount)
 			if (nextTile == 0 && bombsPlaced < t_bombsCount)
 			{
 				bombsPlaced++;
-				m_map[i][j] = 9;
+				m_map[i][j] = MINE;
 			}
 			else
 			{
-				m_map[i][j] = 0;
+				m_map[i][j] = EMPTY;
 			}			
 		}
 	}
@@ -344,7 +341,7 @@ void Game::resetMap(int t_width, int t_height, int t_bombsCount)
 				if (nextTile == 0 && bombsPlaced < t_bombsCount)
 				{
 					bombsPlaced++;
-					m_map[i][j] = 9;
+					m_map[i][j] = MINE;
 				}				
 			}
 		}
@@ -354,36 +351,36 @@ void Game::resetMap(int t_width, int t_height, int t_bombsCount)
 void Game::resetArray(int t_width, int t_height)
 {
 	sf::Vertex vertex;
-	float left = 0.0f;
-	float top = 96.0f;
+	float left = BLANK_TILE_TOPLEFT.x;
+	float top = BLANK_TILE_TOPLEFT.y;
 	m_tilesArray.clear();
 	vertex.color = sf::Color::White;
 	for (int i = 0; i < t_height; i++)
 	{
 		for (int j = 0; j < t_width; j++)
 		{
-			vertex.position = TOP_LEFT + sf::Vector2f{ j * SPRITE_TILE_WIDTH, i * SPRITE_TILE_HEIGHT };
+			vertex.position = BOARD_TOP_LEFT + sf::Vector2f{ j * SPRITE_TILE_WIDTH, i * SPRITE_TILE_HEIGHT };
 			vertex.texCoords = sf::Vector2f{ left , top };
 			m_tilesArray.append(vertex); //a
 
-			vertex.position = TOP_LEFT + sf::Vector2f{ (j +1) * SPRITE_TILE_WIDTH, i * SPRITE_TILE_HEIGHT };
-			vertex.texCoords = sf::Vector2f{ left +32.0f , top  };
+			vertex.position = BOARD_TOP_LEFT + sf::Vector2f{ (j +1) * SPRITE_TILE_WIDTH, i * SPRITE_TILE_HEIGHT };
+			vertex.texCoords = sf::Vector2f{ left +TEXTURE_TILE_WIDTH , top  };
 			m_tilesArray.append(vertex); //b
 
-			vertex.position = TOP_LEFT + sf::Vector2f{ j * SPRITE_TILE_WIDTH, (i +1) * SPRITE_TILE_HEIGHT };
-			vertex.texCoords = sf::Vector2f{ left  , top + 32.0f };
+			vertex.position = BOARD_TOP_LEFT + sf::Vector2f{ j * SPRITE_TILE_WIDTH, (i +1) * SPRITE_TILE_HEIGHT };
+			vertex.texCoords = sf::Vector2f{ left  , top + TEXTURE_TILE_HEIGHT };
 			m_tilesArray.append(vertex);//d
 
-			vertex.position = TOP_LEFT + sf::Vector2f{ (j + 1) * SPRITE_TILE_WIDTH, i * SPRITE_TILE_HEIGHT };
-			vertex.texCoords = sf::Vector2f{ left + 32.0f , top  };
+			vertex.position = BOARD_TOP_LEFT + sf::Vector2f{ (j + 1) * SPRITE_TILE_WIDTH, i * SPRITE_TILE_HEIGHT };
+			vertex.texCoords = sf::Vector2f{ left + TEXTURE_TILE_WIDTH , top  };
 			m_tilesArray.append(vertex); //b
 
-			vertex.position = TOP_LEFT + sf::Vector2f{ (j + 1) * SPRITE_TILE_WIDTH, (i+1) * SPRITE_TILE_HEIGHT };
-			vertex.texCoords = sf::Vector2f{ left + 32.0f , top + 32.0f };
+			vertex.position = BOARD_TOP_LEFT + sf::Vector2f{ (j + 1) * SPRITE_TILE_WIDTH, (i+1) * SPRITE_TILE_HEIGHT };
+			vertex.texCoords = sf::Vector2f{ left + TEXTURE_TILE_WIDTH , top + TEXTURE_TILE_HEIGHT };
 			m_tilesArray.append(vertex);//c
 
-			vertex.position = TOP_LEFT + sf::Vector2f{ j * SPRITE_TILE_WIDTH, (i + 1) * SPRITE_TILE_HEIGHT };
-			vertex.texCoords = sf::Vector2f{ left  , top + 32.0f };
+			vertex.position = BOARD_TOP_LEFT + sf::Vector2f{ j * SPRITE_TILE_WIDTH, (i + 1) * SPRITE_TILE_HEIGHT };
+			vertex.texCoords = sf::Vector2f{ left  , top + TEXTURE_TILE_WIDTH };
 			m_tilesArray.append(vertex);//d
 		}
 	}
@@ -392,50 +389,46 @@ void Game::resetArray(int t_width, int t_height)
 
 void Game::calculateMap(int t_width, int t_height)
 {
-	int x=0;
 	for (int i = 0; i < t_height; i++)
 	{
 		for (int j = 0; j < t_width; j++)
 		{
 			m_playerMap[i][j] = -1;
-			if (m_map[i][j] == 9)
+			if (m_map[i][j] == MINE)
 			{
-				if (j == 3) 
-					x = 9;
 				// top row
-				x++;
-				if (i > 0 && j > 0 && m_map[i - 1][j-1] != 9)
+				if (i > 0 && j > 0 && m_map[i - 1][j-1] != MINE)
 				{
 					m_map[i - 1][j-1]++; //a
 				}
-				if (i > 0 && m_map[i - 1][j] != 9)
+				if (i > 0 && m_map[i - 1][j] != MINE)
 				{
 					m_map[i - 1][j]++; //b
 				}
-				if (i > 0 && j < t_width - 1 && m_map[i - 1][j + 1] != 9)
+				if (i > 0 && j < t_width - 1 && m_map[i - 1][j + 1] != MINE)
 				{
 					m_map[i - 1][j + 1]++; //c
 				}
 				// middle row
-				if (j > 0 && m_map[i][j - 1] != 9)
+				if (j > 0 && m_map[i][j - 1] != MINE)
 				{
 					m_map[i][j - 1]++; //d
 				}
-				if (j < t_width - 1 && m_map[i][j + 1] != 9)
+				if (j < t_width - 1 && m_map[i][j + 1] != MINE)
 				{
 					m_map[i][j + 1]++; //h
 				}
 				// bottom row
 
-				if (i < t_height - 1 && j > 0 && m_map[i+ 1][j -  1] != 9)
+				if (i < t_height - 1 && j > 0 && m_map[i+ 1][j -  1] != MINE)
 				{
 					m_map[i + 1][j - 1]++; //g
 				}				
-				if ( i < t_height - 1 && m_map[i+1][j] != 9)
+				if ( i < t_height - 1 && m_map[i+1][j] != MINE)
 				{
 					m_map[i + 1][j]++; //f
 				}				
-				if (i < t_height -1 && j < t_width - 1 && m_map[i + 1][j + 1] != 9)
+				if (i < t_height -1 && j < t_width - 1 && m_map[i + 1][j + 1] != MINE)
 				{
 					m_map[i + 1][j + 1]++; //i
 				}
@@ -446,11 +439,6 @@ void Game::calculateMap(int t_width, int t_height)
 
 void Game::clearSpace(sf::Vector2i t_square)
 {
-	int x;
-	if (t_square.x == 2 && t_square.y == 2)
-	{
-		x = 9;
-	}
 	m_playerMap[t_square.x][t_square.y] = 0;
 	if (t_square.x > 0 && m_playerMap[t_square.x - 1][t_square.y] == -1)
 	{
@@ -498,11 +486,11 @@ void Game::clearMap(sf::Vector2i t_square)
 	{
 		for (int j = 0; j < mapWidth; j++)
 		{
-			topLeft.x = (m_map[i][j] % 4) * TEXTURE_TILE_WIDTH;
-			topLeft.y = (m_map[i][j] / 4) * TEXTURE_TILE_HEIGHT;
-			if (m_map[i][j] == 9)
+			topLeft.x = (m_map[i][j] % TILES_PER_ROW) * TEXTURE_TILE_WIDTH;
+			topLeft.y = (m_map[i][j] / TILES_PER_ROW) * TEXTURE_TILE_HEIGHT;
+			if (m_map[i][j] == MINE)
 			{
-				topLeft = { 64.0f,96.0f };
+				topLeft = MINE_TILE_TOPLEFT;
 			}
 			index = (j * 6) + (i * mapWidth * 6);
 			m_tilesArray[index++].texCoords = topLeft; // a
@@ -513,7 +501,7 @@ void Game::clearMap(sf::Vector2i t_square)
 			m_tilesArray[index++].texCoords = topLeft + sf::Vector2f{ 0.0f, TEXTURE_TILE_HEIGHT }; //d;;
 		}
 	}
-	topLeft = { 64.0f,64.0f };
+	topLeft = EXPLODED_MINE_TILE_TOPLEFT;
 
 	index = (t_square.y * 6) + (t_square.x * mapWidth * 6);
 	m_tilesArray[index++].texCoords = topLeft; // a
